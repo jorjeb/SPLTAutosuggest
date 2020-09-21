@@ -1,0 +1,29 @@
+@using Blazored.LocalStorage
+@using Microsoft.JSInterop;
+
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject IJSRuntime JsRuntime
+
+<strong>Entries from LocalStorage</strong>
+<table id="local-storage-display-list" class="table">
+    <tbody>
+    </tbody>
+</table>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender) => await _refresh();
+    public async Task Refresh() => await _refresh();
+
+    [JSInvokable]
+    public async Task RemoveItem(string key)
+    {
+        await LocalStorage.RemoveItemAsync(key);
+        await _refresh();
+    }
+
+    private async Task _refresh()
+    {
+        var objRef = DotNetObjectReference.Create(this);
+        await JsRuntime.InvokeVoidAsync("localStorageDisplay.refresh", objRef);          
+    }
+}

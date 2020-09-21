@@ -1,0 +1,92 @@
+﻿@using Newtonsoft.Json
+@using System.Net.Http
+@using System.Threading  
+@using Newtonsoft.Json.Linq
+
+@inject HttpClient Http
+@inject IJSRuntime JsRuntime
+
+<div class="splt-auto-suggest">
+    <div class="splt-auto-suggest-field">
+        <input type="text" name="keyword" @bind="_keyword" @oninput="OnInput" @onblur="OnBlur" />
+
+        @if (_showResults)
+        {
+            <div class="splt-auto-suggest-results">
+                <ul>
+                    @foreach (var item in _items) 
+                    {
+                        <li @onclick="@(async () => await SelectItem(item.Key))">
+                            @item.Key
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+    </div>
+    <ul>
+        @foreach (var source in DataSources)
+        {
+            <li>
+                <input type="radio"
+                       name="dataSource"
+                       value="@source.Key"
+                       checked="@(_selectedDataSource.Equals(source.Key))"
+                       @onchange="OnChange" /> @source.Key
+            </li>
+        }
+    </ul>
+</div>
+
+@code {
+    [Parameter]
+    public Dictionary<string, DataSource> DataSources { get; set; }
+
+    [Parameter]
+    public EventCallback<Tuple<string, JToken>> OnSelectItem { get; set; }
+
+    private string _keyword = "";
+    private string _selectedDataSource = "";
+    private Dictionary<string, JToken> _items = null;
+    private bool _showResults = false;
+
+    protected override void OnInitialized()
+    {
+        _selectedDataSource = DataSources.First().Key;
+    }
+
+    private async Task OnInput(ChangeEventArgs args)
+    {
+        var dataSource = DataSources[_selectedDataSource];
+
+        if (dataSource != null)
+        {
+            _keyword = args.Value.ToString();
+            _items = await dataSource.Search(_keyword);
+            _showResults = _items.Count > 0;
+        }
+    }
+
+    private void OnBlur()
+    {
+        new Timer(_ =>
+        {
+            _showResults = false;
+            StateHasChanged();
+        }, null, 300, Timeout.Infinite);
+    }
+
+    private async Task SelectItem(string key)
+    {
+        var selectedItem = _items[key];
+        await OnSelectItem.InvokeAsync(new Tuple<string, JToken>(key, selectedItem));
+        
+        _keyword = key;
+        _showResults = false;
+    }
+
+    private void OnChange(ChangeEventArgs args)
+    {
+        _selectedDataSource = args.Value.ToString();
+    }
+}

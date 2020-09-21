@@ -1,0 +1,27 @@
+﻿@page "/"
+
+@using Prototype001.Components
+@using Prototype001.Components.SpltAutoSuggest
+@using Newtonsoft.Json
+@using Newtonsoft.Json.Linq
+
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+
+<SpltAutoSuggest DataSources="@_dataSources" OnSelectItem="@OnSelectItem"></SpltAutoSuggest>
+<LocalStorageDisplay @ref="localStorageDisplay"></LocalStorageDisplay>
+
+@code {
+    private LocalStorageDisplay localStorageDisplay;
+    
+    private readonly Dictionary<string, DataSource> _dataSources = 
+        new Dictionary<string, DataSource>() {
+        {"Star Wars", new DataSource("https://swapi.dev/api/people/?search={keyword}", "name", "results")},
+        {"Dungeons & Dragons Spells", new DataSource("https://www.dnd5eapi.co/api/spells/?name={keyword}", "name", "results")}
+    };
+    
+    private async Task OnSelectItem(Tuple<string, JToken> item)
+    {
+        await LocalStorage.SetItemAsync(item.Item1, JsonConvert.SerializeObject(item.Item2));
+        await localStorageDisplay.Refresh();
+    } 
+}
