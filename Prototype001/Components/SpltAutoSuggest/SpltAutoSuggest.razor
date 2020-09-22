@@ -3,9 +3,6 @@
 @using System.Threading  
 @using Newtonsoft.Json.Linq
 
-@inject HttpClient Http
-@inject IJSRuntime JsRuntime
-
 <div class="splt-auto-suggest">
     <div class="splt-auto-suggest-field">
         <input type="text" name="keyword" @bind="_keyword" @oninput="OnInput" @onblur="OnBlur" />
